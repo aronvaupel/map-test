@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
 import mapboxgl from "mapbox-gl";
 import { stores } from "../assets/data";
+import buildLocationList from "../utils/storeListing";
 
 stores.features.forEach(function (store, i) {
   // @ts-ignore
@@ -47,6 +48,7 @@ const Map = () => {
         },
       });
     });
+    buildLocationList(stores);
     //@ts-ignore
     map.current.on("move", () => {
       //@ts-ignore
@@ -69,7 +71,7 @@ const Map = () => {
         </div>
         <div id="listings" className="listings"></div>
       </div>
-      <div ref={mapContainer} className="map" />
+      <div ref={mapContainer} className="map-container" />
     </div>
   );
 };
