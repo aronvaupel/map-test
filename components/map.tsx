@@ -1,16 +1,31 @@
 import React, { useRef, useEffect, useState } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
-import mapboxgl from "mapbox-gl";
+import mapboxgl, { LngLatLike } from "mapbox-gl";
 import { stores } from "../assets/data";
-import buildLocationList from "../utils/storeListing";
-
-stores.features.forEach(function (store, i) {
-  // @ts-ignore
-  store.properties.id = i;
-});
 
 mapboxgl.accessToken =
   "pk.eyJ1IjoiYXJvbjE4IiwiYSI6ImNsMzRibG9xYjB3ZjUzaW13d2s3bzVjcGkifQ.QGlBNyR336mJ2rFfFprAPg";
+
+type Feature = {
+  type: string;
+  geometry: Geometry;
+  properties: Properties;
+};
+
+type Geometry = {
+  type: string;
+  coordinates: LngLatLike;
+};
+
+type Properties = {
+  title: string;
+  address: string;
+  city: string;
+  country: string;
+  crossStreet: string;
+  postalCode: string;
+  state: string;
+};
 
 const Map = () => {
   const mapContainer = useRef(null);
@@ -19,6 +34,7 @@ const Map = () => {
   const [lat, setLat] = useState(51.34);
   const [zoom, setZoom] = useState(14);
 
+  //Load Map
   useEffect(() => {
     if (map.current) return;
     //@ts-ignore
@@ -30,25 +46,22 @@ const Map = () => {
       zoom: zoom,
     });
   });
-
+  //Load layer with external data & list data for sidebar
   useEffect(() => {
-    if (!map.current) return; // wait for map to initialize
-
+    if (!map.current) return;
     // @ts-ignore
     map.current.on("load", () => {
-      /* Add the data to your map as a layer */
       // @ts-ignore
       map.current.addLayer({
         id: "locations",
         type: "circle",
-        /* Add a GeoJSON source containing place coordinates and information. */
         source: {
           type: "geojson",
           data: stores,
         },
       });
     });
-    buildLocationList(stores);
+
     //@ts-ignore
     map.current.on("move", () => {
       //@ts-ignore
@@ -63,13 +76,47 @@ const Map = () => {
     });
   });
 
+  function createPopUp(currentFeature: Feature) {
+    const popUps = document.getElementsByClassName("mapboxgl-popup");
+    /** Check if there is already a popup on the map and if so, remove it */
+    if (popUps[0]) popUps[0].remove();
+
+    const popup = new mapboxgl.Popup({ closeOnClick: false })
+      .setLngLat(currentFeature.geometry.coordinates)
+      .setHTML(
+        `<h3>${currentFeature.properties.title}</h3><h4>${currentFeature.properties.address}</h4>`
+      )
+      //@ts-ignore
+      .addTo(map);
+  }
+
   return (
     <div>
       <div className="sidebar">
         <div className="heading">
           <h1>Our locations</h1>
         </div>
-        <div id="listings" className="listings"></div>
+        <div id="listings" className="listings">
+          {stores.features.length &&
+            stores.features.map((feature, i) => (
+              <div
+                key={i}
+                id={`listing-${i}`}
+                className="item"
+                onClick={() => {
+                  //@ts-ignore
+                  map.current.flyTo({
+                    center: feature.geometry.coordinates,
+                    zoom: 15,
+                  });
+                }}
+              >
+                <a href="#" className="title" id={`link-${i}`}>
+                  <div>{feature.properties.title}</div>
+                </a>
+              </div>
+            ))}
+        </div>
       </div>
       <div ref={mapContainer} className="map-container" />
     </div>
