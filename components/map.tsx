@@ -1,6 +1,12 @@
 import React, { useRef, useEffect, useState } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
 import mapboxgl from "mapbox-gl";
+import { stores } from "../assets/data";
+
+stores.features.forEach(function (store, i) {
+  // @ts-ignore
+  store.properties.id = i;
+});
 
 mapboxgl.accessToken =
   "pk.eyJ1IjoiYXJvbjE4IiwiYSI6ImNsMzRibG9xYjB3ZjUzaW13d2s3bzVjcGkifQ.QGlBNyR336mJ2rFfFprAPg";
@@ -8,9 +14,9 @@ mapboxgl.accessToken =
 const Map = () => {
   const mapContainer = useRef(null);
   const map = useRef(null);
-  const [lng, setLng] = useState(-70.9);
-  const [lat, setLat] = useState(42.35);
-  const [zoom, setZoom] = useState(9);
+  const [lng, setLng] = useState(12.37);
+  const [lat, setLat] = useState(51.34);
+  const [zoom, setZoom] = useState(14);
 
   useEffect(() => {
     if (map.current) return;
@@ -26,8 +32,22 @@ const Map = () => {
 
   useEffect(() => {
     if (!map.current) return; // wait for map to initialize
-    //@ts-ignore
 
+    // @ts-ignore
+    map.current.on("load", () => {
+      /* Add the data to your map as a layer */
+      // @ts-ignore
+      map.current.addLayer({
+        id: "locations",
+        type: "circle",
+        /* Add a GeoJSON source containing place coordinates and information. */
+        source: {
+          type: "geojson",
+          data: stores,
+        },
+      });
+    });
+    //@ts-ignore
     map.current.on("move", () => {
       //@ts-ignore
 
@@ -43,7 +63,13 @@ const Map = () => {
 
   return (
     <div>
-      <div ref={mapContainer} className="map-container" />
+      <div className="sidebar">
+        <div className="heading">
+          <h1>Our locations</h1>
+        </div>
+        <div id="listings" className="listings"></div>
+      </div>
+      <div ref={mapContainer} className="map" />
     </div>
   );
 };
