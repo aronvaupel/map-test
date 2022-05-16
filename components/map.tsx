@@ -88,41 +88,12 @@ const Map = () => {
       .addTo(map.current);
   }
 
-  function mapClickHandler() {
-    console.log("test");
+  //@ts-ignore
+  function flyToStore(currentFeature) {
     //@ts-ignore
-    map.current.on("click", (event) => {
-      /* Determine if a feature in the "locations" layer exists at that point. */
-      //@ts-ignore
-      const features = map.current.queryRenderedFeatures(event.point, {
-        layers: ["locations"],
-      });
-
-      /* If it does not exist, return */
-      if (!features.length) return;
-
-      const clickedPoint = features[0];
-
-      /* Fly to the point */
-      //@ts-ignore
-      map.current.flyTo({
-        center: features[0].geometry.coordinates,
-        zoom: 15,
-      });
-
-      /* Close all other popups and display popup for clicked store */
-      createPopUp(clickedPoint);
-
-      /* Highlight listing in sidebar (and remove highlight for all other listings) */
-      const activeItem = document.getElementsByClassName("active");
-      if (activeItem[0]) {
-        activeItem[0].classList.remove("active");
-      }
-      const listing = document.getElementById(
-        `listing-${clickedPoint.properties.id}`
-      );
-      //@ts-ignorets-ig
-      listing.classList.add("active");
+    map.current.flyTo({
+      center: currentFeature.geometry.coordinates,
+      zoom: 15,
     });
   }
 
@@ -136,7 +107,23 @@ const Map = () => {
       el.id = `marker-${marker.properties.title}`;
       /* Assign the `marker` class to each marker for styling. */
       el.className = "marker";
-
+      el.addEventListener("click", (e) => {
+        /* Fly to the point */
+        flyToStore(marker);
+        /* Close all other popups and display popup for clicked store */
+        createPopUp(marker);
+        /* Highlight listing in sidebar */
+        const activeItem = document.getElementsByClassName("active");
+        e.stopPropagation();
+        if (activeItem[0]) {
+          activeItem[0].classList.remove("active");
+        }
+        const listing = document.getElementById(
+          `listing-${marker.properties.title}`
+        );
+        //@ts-ignore
+        listing.classList.add("active");
+      });
       /**
        * Create a marker using the div element
        * defined above and add it to the map.
@@ -163,11 +150,7 @@ const Map = () => {
                 id={`listing-${i}`}
                 className="item"
                 onClick={() => {
-                  //@ts-ignore
-                  map.current.flyTo({
-                    center: feature.geometry.coordinates,
-                    zoom: 15,
-                  });
+                  flyToStore(feature);
                   createPopUp(feature);
                   const activeItem = document.getElementsByClassName("active");
                   if (activeItem[0]) {
@@ -185,11 +168,7 @@ const Map = () => {
             ))}
         </div>
       </div>
-      <div
-        ref={mapContainer}
-        className="map-container"
-        onClick={() => mapClickHandler()}
-      />
+      <div ref={mapContainer} className="map-container" />
     </div>
   );
 };
