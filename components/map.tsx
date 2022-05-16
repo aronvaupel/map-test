@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, MouseEvent } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
 import mapboxgl, { LngLatLike } from "mapbox-gl";
 import { stores } from "../assets/data";
@@ -33,6 +33,7 @@ const Map = () => {
   const [lng, setLng] = useState(12.37);
   const [lat, setLat] = useState(51.34);
   const [zoom, setZoom] = useState(14);
+  const [marker, setMarker] = useState();
 
   //Load Map
   useEffect(() => {
@@ -52,15 +53,12 @@ const Map = () => {
     // @ts-ignore
     map.current.on("load", () => {
       // @ts-ignore
-      map.current.addLayer({
-        id: "locations",
-        type: "circle",
-        source: {
-          type: "geojson",
-          data: stores,
-        },
+      map.addSource("places", {
+        type: "geojson",
+        data: stores,
       });
     });
+    addMarkers();
 
     //@ts-ignore
     map.current.on("move", () => {
@@ -91,28 +89,64 @@ const Map = () => {
   }
 
   function mapClickHandler() {
-    /* Determine if a feature in the "locations" layer exists at that point. */
-
-    console.log("test"); //@ts-ignore
-    const features = map.queryRenderedFeatures(point, {
-      layers: ["locations"],
-    });
-
-    /* If it does not exist, return */
-    if (!features.length) return;
-
-    const clickedPoint = features[0];
-
-    /* Fly to the point */
+    console.log("test");
     //@ts-ignore
-    map.current.flyTo({
+    map.current.on("click", (event) => {
+      /* Determine if a feature in the "locations" layer exists at that point. */
       //@ts-ignore
-      center: feature.geometry.coordinates,
-      zoom: 15,
-    });
+      const features = map.current.queryRenderedFeatures(event.point, {
+        layers: ["locations"],
+      });
 
-    /* Close all other popups and display popup for clicked store */
-    createPopUp(clickedPoint);
+      /* If it does not exist, return */
+      if (!features.length) return;
+
+      const clickedPoint = features[0];
+
+      /* Fly to the point */
+      //@ts-ignore
+      map.current.flyTo({
+        center: features[0].geometry.coordinates,
+        zoom: 15,
+      });
+
+      /* Close all other popups and display popup for clicked store */
+      createPopUp(clickedPoint);
+
+      /* Highlight listing in sidebar (and remove highlight for all other listings) */
+      const activeItem = document.getElementsByClassName("active");
+      if (activeItem[0]) {
+        activeItem[0].classList.remove("active");
+      }
+      const listing = document.getElementById(
+        `listing-${clickedPoint.properties.id}`
+      );
+      //@ts-ignorets-ig
+      listing.classList.add("active");
+    });
+  }
+
+  function addMarkers() {
+    /* For each feature in the GeoJSON object above: */
+
+    for (const marker of stores.features) {
+      /* Create a div element for the marker. */
+      const el = document.createElement("div");
+      /* Assign a unique `id` to the marker. */
+      el.id = `marker-${marker.properties.title}`;
+      /* Assign the `marker` class to each marker for styling. */
+      el.className = "marker";
+
+      /**
+       * Create a marker using the div element
+       * defined above and add it to the map.
+       **/
+      new mapboxgl.Marker(el, { offset: [0, -23] })
+        //@ts-ignore
+        .setLngLat(marker.geometry.coordinates)
+        //@ts-ignore
+        .addTo(map.current);
+    }
   }
 
   return (
@@ -154,7 +188,7 @@ const Map = () => {
       <div
         ref={mapContainer}
         className="map-container"
-        onClick={() => mapClickHandler}
+        onClick={() => mapClickHandler()}
       />
     </div>
   );

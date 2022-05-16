@@ -143,3 +143,10 @@ a:hover {
 .mapboxgl-popup-anchor-top > .mapboxgl-popup-tip {
   border-bottom-color: #91c949;
 }
+.marker {
+  border: none;
+  cursor: pointer;
+  height: 110px;
+  width: 70px;
+  background-image: url(../assets/giftIcon.svg);
+}
