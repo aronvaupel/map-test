@@ -76,7 +76,7 @@ const Map = () => {
     });
   });
 
-  function createPopUp(currentFeature: Feature) {
+  function createPopUp(currentFeature: any) {
     const popUps = document.getElementsByClassName("mapboxgl-popup");
     /** Check if there is already a popup on the map and if so, remove it */
     if (popUps[0]) popUps[0].remove();
@@ -87,7 +87,32 @@ const Map = () => {
         `<h3>${currentFeature.properties.title}</h3><h4>${currentFeature.properties.address}</h4>`
       )
       //@ts-ignore
-      .addTo(map);
+      .addTo(map.current);
+  }
+
+  function mapClickHandler() {
+    /* Determine if a feature in the "locations" layer exists at that point. */
+
+    console.log("test"); //@ts-ignore
+    const features = map.queryRenderedFeatures(point, {
+      layers: ["locations"],
+    });
+
+    /* If it does not exist, return */
+    if (!features.length) return;
+
+    const clickedPoint = features[0];
+
+    /* Fly to the point */
+    //@ts-ignore
+    map.current.flyTo({
+      //@ts-ignore
+      center: feature.geometry.coordinates,
+      zoom: 15,
+    });
+
+    /* Close all other popups and display popup for clicked store */
+    createPopUp(clickedPoint);
   }
 
   return (
@@ -109,6 +134,14 @@ const Map = () => {
                     center: feature.geometry.coordinates,
                     zoom: 15,
                   });
+                  createPopUp(feature);
+                  const activeItem = document.getElementsByClassName("active");
+                  if (activeItem[0]) {
+                    activeItem[0].classList.remove("active");
+                  }
+                  //@ts-ignore
+                  const thisElement = document.getElementById(`listing-${i}`);
+                  (thisElement as HTMLElement).classList.add("active");
                 }}
               >
                 <a href="#" className="title" id={`link-${i}`}>
@@ -118,7 +151,11 @@ const Map = () => {
             ))}
         </div>
       </div>
-      <div ref={mapContainer} className="map-container" />
+      <div
+        ref={mapContainer}
+        className="map-container"
+        onClick={() => mapClickHandler}
+      />
     </div>
   );
 };
